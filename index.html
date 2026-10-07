@@ -406,7 +406,7 @@
                             </button>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div id="optRow" class="grid grid-cols-2 gap-3 mb-6">
                             <button id="optNovia" type="button" onclick="verCarta('novia')" class="opt-btn"><span class="n">Areli Ríos</span><span class="t">su carta</span></button>
                             <button id="optNovio" type="button" onclick="verCarta('novio')" class="opt-btn"><span class="n">Roberto Figueroa</span><span class="t">su carta</span></button>
                         </div>
@@ -826,11 +826,13 @@ Sé que a veces no está en nuestras manos poder estar en todo, así que si esta
         }
         function firmaPara(d, q) { return (!d.novia && !d.novio) ? 'Areli & Roberto' : (q === 'novio' ? 'Roberto' : 'Areli'); }
 
+        const optNoviaEl = gid('optNovia'), optNovioEl = gid('optNovio'), optRow = gid('optRow');
         function verCarta(q) {
-            activa = q;
             const d = guestMessages[idxActual];
-            gid('optNovia').classList.toggle('act', q === 'novia');
-            gid('optNovio').classList.toggle('act', q === 'novio');
+            if (d.soloNovio && q === 'novia') q = 'novio';   /* en cartas solo del novio, la de la novia no existe */
+            activa = q;
+            optNoviaEl.classList.toggle('act', q === 'novia');
+            optNovioEl.classList.toggle('act', q === 'novio');
             scrollHeader.textContent = (q === 'novio' && d.hNovio) ? d.hNovio : d.header;
             scrollBody.className = 'font-serif text-[17px] sm:text-xl text-charcoal/90 leading-relaxed italic pt-2';
             scrollBody.innerHTML = '';
@@ -851,10 +853,12 @@ Sé que a veces no está en nuestras manos poder estar en todo, así que si esta
             carta = true; idxActual = index; activa = null;
             const data = guestMessages[index];
             scrollHeader.textContent = data.header;
-            gid('optNovia').classList.remove('act'); gid('optNovio').classList.remove('act');
+            optNoviaEl.classList.remove('act'); optNovioEl.classList.remove('act');
             scrollBody.className = 'font-serif text-lg text-mutedSepia leading-relaxed italic pt-2 text-center';
             scrollBody.textContent = 'elige qué carta quieres leer primero. puedes ver una y luego la otra las veces que quieras.';
-            gid('optNovia').style.display = data.soloNovio ? 'none' : '';
+            /* solo novio: el botón de la novia se elimina del documento y no se muestra selector alguno */
+            if (data.soloNovio) { optNoviaEl.remove(); optRow.style.display = 'none'; }
+            else { if (!optNoviaEl.isConnected) optRow.insertBefore(optNoviaEl, optRow.firstChild); optRow.style.display = ''; }
             if (data.soloNovio) verCarta('novio');
             document.getElementById('scrollFirma').classList.add('hidden');
             closedLetterCard.classList.add('opacity-40', 'scale-95');
@@ -923,7 +927,7 @@ Sé que a veces no está en nuestras manos poder estar en todo, así que si esta
                 }
                 stage.remove();
                 const slug = d.badge.replace('Para: ', '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                pdf.save('cartas-areli-y-roberto-' + slug + '.pdf');
+                pdf.save((d.soloNovio ? 'carta-roberto-' : 'cartas-areli-y-roberto-') + slug + '.pdf');
             } catch (err) {
                 console.error(err); alert('Ocurrió un problema al crear el PDF. Inténtalo de nuevo.');
             } finally {
